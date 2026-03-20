@@ -363,5 +363,4 @@ export default function Home() {
       </footer>
     </main>
   );
-}PASTEHERE
-git add -A && git commit -m 'feat: reimagined Dwaraka Build' && git push
+}
