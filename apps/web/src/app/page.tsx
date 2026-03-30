@@ -1,213 +1,66 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {
-  motion,
-  AnimatePresence,
-  useScroll,
-  useTransform,
-  useInView,
-} from "framer-motion";
+import Link from "next/link";
 
-/* ─────────────────────────── Easing curves ────────────────────────────── */
-type Bez = [number, number, number, number];
-const LUX:  Bez = [0.16, 1, 0.3, 1];
-const EXPO: Bez = [0.87, 0, 0.13, 1];
-
-/* ─────────────────────────── Shared variants ──────────────────────────── */
-
-/** Scroll-triggered fade-up. Pass `custom={index}` for stagger offset. */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const fadeUp: any = {
-  hidden:  { opacity: 0, y: 26 },
-  visible: (d: number = 0) => ({
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.72, ease: LUX, delay: d * 0.13 },
-  }),
-};
-
-/** Stagger container — wraps grid children */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const staggerWrap: any = {
-  hidden:  {},
-  visible: { transition: { staggerChildren: 0.10, delayChildren: 0.06 } },
-};
-
-/** Uniform grid child (used inside staggerWrap) */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const gridItem: any = {
-  hidden:  { opacity: 0, y: 22 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.60, ease: LUX } },
-};
-
-/** Testimonial slide direction variants */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const testimonialVariants: any = {
-  enter:  (d: number) => ({ opacity: 0, y: d * 18 }),
-  center: { opacity: 1, y: 0 },
-  exit:   (d: number) => ({ opacity: 0, y: -d * 18 }),
-};
-
-/* ─────────────────────────── Animated counter ─────────────────────────── */
-function AnimatedNumber({
-  value,
-  prefix = "",
-}: {
-  value: number;
-  prefix?: string;
-}) {
-  const ref    = useRef<HTMLSpanElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-60px 0px" });
-  const [count, setCount] = useState(0);
-
-  useEffect(() => {
-    if (!inView) return;
-    const dur = 2200;
-    const t0  = performance.now();
-    const tick = (t: number) => {
-      const p = Math.min((t - t0) / dur, 1);
-      setCount(Math.round((1 - Math.pow(1 - p, 4)) * value));
-      if (p < 1) requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
-  }, [inView, value]);
-
-  return <span ref={ref}>{prefix}{count}</span>;
-}
-
-/* ─────────────────────────── Parallax interlude ───────────────────────── */
-function InterludeSection() {
-  const ref = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start end", "end start"],
-  });
-  const imgY = useTransform(scrollYProgress, [0, 1], ["-8%", "8%"]);
-
-  return (
-    <section
-      ref={ref}
-      style={{
-        position: "relative",
-        height: "70vh",
-        overflow: "hidden",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <motion.img
-        src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1920&q=80&auto=format&fit=crop"
-        alt="Residence at dusk"
-        style={{
-          y: imgY,
-          position: "absolute",
-          width: "100%",
-          height: "120%",
-          objectFit: "cover",
-          top: "-10%",
-          left: 0,
-        }}
-      />
-      <div className="interlude-overlay" />
-      <motion.p
-        className="interlude-text"
-        initial={{ opacity: 0, y: 34 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-80px 0px" }}
-        transition={{ duration: 1.1, ease: LUX }}
-      >
-        The spine keeps your home alive.<br />
-        The mind makes it <em>intelligent.</em>
-      </motion.p>
-    </section>
-  );
-}
-
-/* ─────────────────────────── Testimonial carousel ─────────────────────── */
-const TESTIMONIALS = [
-  {
-    q: "The brass panel changed everything. My children can control any room with one button. No screens, no apps, no arguments about the remote.",
-    n: "Arjun & Kavya Mehta",
-    l: "The Ritz-Carlton Residences, Mumbai",
-  },
-  {
-    q: "Rta asked me if it should start my coffee when my alarm goes off. I said yes. That was three months ago. I haven\u2019t touched the machine since.",
-    n: "Sophia Rothschild",
-    l: "One Hyde Park, London",
-  },
-  {
-    q: "I travel 280 days a year. Rta runs my homes in Mumbai and London as if I never left.",
-    n: "Priya Desai",
-    l: "Dual Residence, Mumbai & London",
-  },
-];
-
-function TestimonialCarousel() {
-  const [active, setActive] = useState(0);
-  const [dir,    setDir]    = useState(1);
-
-  const go = (i: number) => {
-    setDir(i > active ? 1 : -1);
-    setActive(i);
-  };
-
-  return (
-    <motion.div
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, margin: "-60px" }}
-      variants={fadeUp}
-      custom={1}
-      style={{ position: "relative", zIndex: 1 }}
-    >
-      <div style={{ position: "relative", minHeight: 200 }}>
-        <AnimatePresence mode="wait" custom={dir}>
-          <motion.div
-            key={active}
-            custom={dir}
-            variants={testimonialVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ duration: 0.45, ease: LUX }}
-            style={{ textAlign: "center", padding: "0 1rem" }}
-          >
-            <div className="voice-q">&ldquo;{TESTIMONIALS[active].q}&rdquo;</div>
-            <p className="voice-n">{TESTIMONIALS[active].n}</p>
-            <p className="voice-l">{TESTIMONIALS[active].l}</p>
-          </motion.div>
-        </AnimatePresence>
-      </div>
-      <div className="v-dots">
-        {TESTIMONIALS.map((_, i) => (
-          <button
-            key={i}
-            className={`v-dot ${i === active ? "on" : ""}`}
-            onClick={() => go(i)}
-          />
-        ))}
-      </div>
-    </motion.div>
-  );
-}
-
-/* ─────────────────────────── Main page ────────────────────────────────── */
 export default function Home() {
   const [gateOpen, setGateOpen] = useState(false);
   const [gateDone, setGateDone] = useState(false);
+  const revealRefs = useRef<(HTMLElement | null)[]>([]);
+  const counterRefs = useRef<(HTMLElement | null)[]>([]);
 
   useEffect(() => {
-    const t1 = setTimeout(() => setGateOpen(true),  2400);
+    const t1 = setTimeout(() => setGateOpen(true), 2400);
     const t2 = setTimeout(() => setGateDone(true), 3600);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
+  useEffect(() => {
+    if (!gateDone) return;
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting) {
+          const d = parseFloat((e.target as HTMLElement).dataset.d || "0") * 0.14;
+          (e.target as HTMLElement).style.transitionDelay = d + "s";
+          e.target.classList.add("vis");
+        }
+      });
+    }, { threshold: 0.1, rootMargin: "0px 0px -40px 0px" });
+    revealRefs.current.forEach((el) => el && obs.observe(el));
+
+    const cObs = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting) {
+          const el = e.target as HTMLElement;
+          const t = parseInt(el.dataset.t || "0");
+          const dur = 2200;
+          const s = performance.now();
+          (function tick(n: number) {
+            const p = Math.min((n - s) / dur, 1);
+            const ease = 1 - Math.pow(1 - p, 4);
+            el.textContent = Math.round(ease * t).toString();
+            if (p < 1) requestAnimationFrame(tick);
+          })(s);
+          cObs.unobserve(el);
+        }
+      });
+    }, { threshold: 0.5 });
+    counterRefs.current.forEach((el) => el && cObs.observe(el));
+
+    return () => { obs.disconnect(); cObs.disconnect(); };
+  }, [gateDone]);
+
+  const addReveal = (el: HTMLElement | null) => {
+    if (el && !revealRefs.current.includes(el)) revealRefs.current.push(el);
+  };
+  const addCounter = (el: HTMLElement | null) => {
+    if (el && !counterRefs.current.includes(el)) counterRefs.current.push(el);
+  };
+
   return (
     <>
-      {/* ──────────────────────────── GLOBAL STYLES ──────────────────────── */}
       <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700&family=Manrope:wght@200;300;400;500;600;700&display=swap');
         :root {
           --brass:#8B6F47;--brass-light:#A8935F;--brass-pale:#C4B08A;--brass-deep:#6B5A3E;
           --gold:#D4A853;--gold-dim:rgba(212,168,83,0.06);
@@ -223,7 +76,25 @@ export default function Home() {
         body{font-family:var(--fb);background:var(--cream);color:var(--charcoal);overflow-x:hidden;-webkit-font-smoothing:antialiased;margin:0;padding:0}
         ::selection{background:var(--brass);color:var(--cream)}
 
-        .nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 clamp(1.5rem,4vw,3rem);height:60px;display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(20px);background:rgba(250,248,245,0.8);border-bottom:1px solid rgba(232,228,222,0.5)}
+        .gate{position:fixed;inset:0;z-index:10000;pointer-events:none}
+        .gate-l,.gate-r{position:absolute;top:0;bottom:0;width:50.1%;background:var(--obsidian);will-change:transform;transition:transform 1s var(--expo)}
+        .gate-l{left:0}.gate-r{right:0}
+        .gate-open .gate-l{transform:translateX(-100%)}
+        .gate-open .gate-r{transform:translateX(100%)}
+        .gate-center{position:fixed;inset:0;z-index:10001;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
+        .gate-symbol{font-family:var(--fd);font-size:clamp(3.5rem,9vw,6.5rem);font-weight:300;color:var(--brass);opacity:0;animation:gIn 1.2s 0.2s var(--lux) forwards}
+        .gate-tag{font-size:0.55rem;font-weight:600;letter-spacing:0.4em;text-transform:uppercase;color:var(--brass-pale);opacity:0;animation:gIn 0.8s 0.6s var(--lux) forwards;margin-top:0.4rem}
+        .gate-bar{width:100px;height:1px;background:rgba(139,111,71,0.2);margin-top:1.2rem;position:relative;overflow:hidden;opacity:0;animation:gIn 0.5s 0.8s forwards}
+        .gate-bar-fill{position:absolute;inset:0;background:var(--brass);width:0;animation:gBar 1.4s 1s var(--lux) forwards}
+        .gate-center.fade{opacity:0;transition:opacity 0.4s}
+        .gate-done .gate-center{display:none}
+        @keyframes gIn{to{opacity:1}}
+        @keyframes gBar{to{width:100%}}
+
+        .rv{opacity:0;transform:translateY(30px);transition:opacity 0.7s var(--lux),transform 0.7s var(--lux)}
+        .rv.vis{opacity:1;transform:translateY(0)}
+
+        .nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 clamp(1.5rem,4vw,3rem);height:60px;display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(20px);background:rgba(250,248,245,0.8);border-bottom:1px solid rgba(232,228,222,0.5);transition:transform 0.4s var(--lux)}
         .logo{font-family:var(--fd);font-size:1.3rem;font-weight:600;color:var(--charcoal);text-decoration:none}
         .logo b{color:var(--brass)}
         .nav-links{display:flex;gap:2rem;align-items:center}
@@ -235,14 +106,18 @@ export default function Home() {
 
         .tag{font-size:0.65rem;font-weight:600;letter-spacing:0.3em;text-transform:uppercase;color:var(--brass);margin-bottom:1.2rem}
         .h2{font-family:var(--fd);font-size:clamp(2.2rem,5vw,4rem);font-weight:400;line-height:1.1;margin-bottom:1.5rem}
+        .h3{font-family:var(--fd);font-size:clamp(1.4rem,3vw,2rem);font-weight:400;line-height:1.2;margin-bottom:1rem}
         .body{font-size:0.88rem;line-height:1.7;color:var(--ash);max-width:500px}
 
         .sec{padding:clamp(5rem,10vw,8rem) clamp(1.5rem,5vw,4rem)}
         .sec-dk{background:var(--obsidian);color:var(--cream)}
         .sec-dk .tag{color:var(--brass-pale)}
         .sec-dk .body{color:rgba(250,248,245,0.45)}
+        .sec-ob{background:var(--stone);color:var(--cream)}
+        .sec-ob .body{color:rgba(250,248,245,0.4)}
         .sec-iv{background:var(--ivory)}
         .sec-pe{background:var(--pearl)}
+
         .mw{max-width:1200px;margin:0 auto}
 
         .hero{position:relative;min-height:100vh;display:flex;align-items:flex-end;padding:0 clamp(1.5rem,5vw,4rem) clamp(3rem,6vw,5rem);overflow:hidden}
@@ -264,7 +139,8 @@ export default function Home() {
 
         .domain-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin-top:3rem}
         @media(max-width:768px){.domain-grid{grid-template-columns:repeat(2,1fr)}}
-        .domain-card{padding:clamp(1.5rem,3vw,2.5rem);background:rgba(250,248,245,0.03);border:1px solid rgba(250,248,245,0.06);cursor:default}
+        .domain-card{padding:clamp(1.5rem,3vw,2.5rem);background:rgba(250,248,245,0.03);border:1px solid rgba(250,248,245,0.06);transition:all 0.5s var(--lux);cursor:default}
+        .domain-card:hover{background:rgba(250,248,245,0.06);border-color:rgba(139,111,71,0.3)}
         .domain-dot{width:6px;height:6px;border-radius:50%;background:var(--brass);margin-bottom:1.5rem}
         .domain-name{font-family:var(--fd);font-size:1.2rem;font-weight:500;color:var(--cream);margin-bottom:0.6rem}
         .domain-desc{font-size:0.78rem;line-height:1.6;color:rgba(250,248,245,0.35)}
@@ -287,11 +163,14 @@ export default function Home() {
         .hw-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-top:3rem}
         @media(max-width:768px){.hw-grid{grid-template-columns:repeat(2,1fr)}}
         .hw-card{background:var(--ivory);border:1px solid var(--mist);border-radius:16px;padding:clamp(1.2rem,2vw,2rem);transition:border-color 0.4s}
+        .hw-card:hover{border-color:var(--brass-pale)}
         .hw-icon{width:2.5rem;height:2.5rem;border-radius:10px;background:var(--obsidian);display:flex;align-items:center;justify-content:center;margin-bottom:1.2rem}
         .hw-icon-dot{width:5px;height:5px;border-radius:50%;background:var(--brass)}
         .hw-name{font-family:var(--fd);font-size:1.1rem;font-weight:500;margin-bottom:0.4rem}
         .hw-desc{font-size:0.75rem;line-height:1.6;color:var(--ash)}
 
+        .interlude{position:relative;height:70vh;overflow:hidden;display:flex;align-items:center;justify-content:center}
+        .interlude img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
         .interlude-overlay{position:absolute;inset:0;background:rgba(13,13,12,0.55)}
         .interlude-text{position:relative;z-index:2;font-family:var(--fd);font-size:clamp(1.8rem,5vw,3.5rem);font-weight:300;color:rgba(250,248,245,0.9);text-align:center;max-width:700px;padding:0 1.5rem;line-height:1.15}
         .interlude-text em{font-style:italic;color:var(--brass-pale)}
@@ -333,6 +212,8 @@ export default function Home() {
         .m-val{font-family:var(--fd);font-size:clamp(2rem,5vw,3.5rem);font-weight:300;color:var(--brass)}
         .m-label{font-size:0.7rem;color:var(--ash);margin-top:0.5rem;letter-spacing:0.05em}
 
+        .voice{display:none;text-align:center;padding:0 1rem}
+        .voice.on{display:block}
         .voice-q{font-family:var(--fd);font-size:clamp(1.1rem,2.5vw,1.5rem);font-weight:400;line-height:1.5;color:var(--charcoal);max-width:600px;margin:0 auto 1.5rem;font-style:italic}
         .voice-n{font-weight:600;font-size:0.85rem;color:var(--charcoal)}
         .voice-l{font-size:0.75rem;color:var(--ash);margin-top:0.2rem}
@@ -379,321 +260,159 @@ export default function Home() {
         .footer-bottom a:hover{color:var(--brass-light)}
       `}</style>
 
-      {/* ─────────────────────── GATE (cinematic reveal) ─────────────────── */}
-      <AnimatePresence>
-        {!gateDone && (
-          <motion.div
-            key="gate-panels"
-            style={{ position: "fixed", inset: 0, zIndex: 10000, pointerEvents: "none" }}
-            exit={{ opacity: 0, transition: { duration: 0 } }}
-          >
-            <motion.div
-              style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: "50.2%", background: "var(--obsidian)" }}
-              animate={{ x: gateOpen ? "-101%" : 0 }}
-              transition={{ duration: 1.05, ease: EXPO }}
-            />
-            <motion.div
-              style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: "50.2%", background: "var(--obsidian)" }}
-              animate={{ x: gateOpen ? "101%" : 0 }}
-              transition={{ duration: 1.05, ease: EXPO }}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* GATE */}
+      <div className={`gate ${gateOpen ? "gate-open" : ""} ${gateDone ? "gate-done" : ""}`}>
+        <div className="gate-l" /><div className="gate-r" />
+      </div>
+      <div className={`gate-center ${gateOpen ? "fade" : ""} ${gateDone ? "gate-done" : ""}`} id="gateCenter">
+        <div className="gate-symbol">&#2315;&#2340;</div>
+        <div className="gate-tag">The Architecture of Order</div>
+        <div className="gate-bar"><div className="gate-bar-fill" /></div>
+      </div>
 
-      {/* Gate center logo */}
-      <AnimatePresence>
-        {!gateDone && (
-          <motion.div
-            key="gate-center"
-            style={{
-              position: "fixed", inset: 0, zIndex: 10001,
-              display: "flex", flexDirection: "column",
-              alignItems: "center", justifyContent: "center",
-              pointerEvents: "none",
-            }}
-            animate={{ opacity: gateOpen ? 0 : 1 }}
-            transition={{ duration: 0.38 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div
-              style={{ fontFamily: "var(--fd)", fontSize: "clamp(3.5rem,9vw,6.5rem)", fontWeight: 300, color: "var(--brass)" }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 1.2, delay: 0.2, ease: LUX }}
-            >
-              &#2315;&#2340;
-            </motion.div>
-            <motion.div
-              style={{ fontSize: "0.55rem", fontWeight: 600, letterSpacing: "0.4em", textTransform: "uppercase", color: "var(--brass-pale)", marginTop: "0.4rem" }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.8, delay: 0.6, ease: LUX }}
-            >
-              The Architecture of Order
-            </motion.div>
-            <div style={{ width: 100, height: 1, background: "rgba(139,111,71,0.2)", marginTop: "1.2rem", overflow: "hidden", position: "relative" }}>
-              <motion.div
-                style={{ position: "absolute", inset: 0, background: "var(--brass)", transformOrigin: "left center" }}
-                initial={{ scaleX: 0 }}
-                animate={{ scaleX: 1 }}
-                transition={{ duration: 1.4, delay: 1.0, ease: LUX }}
-              />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ─────────────────────────── NAV ─────────────────────────────────── */}
-      <motion.nav
-        className="nav"
-        initial={{ y: -70, opacity: 0 }}
-        animate={gateDone ? { y: 0, opacity: 1 } : {}}
-        transition={{ duration: 0.65, ease: LUX }}
-      >
+      {/* NAV */}
+      <nav className="nav">
         <a href="#" className="logo">Rta <b>Living</b></a>
         <div className="nav-links">
           <a href="#system">System</a>
           <a href="#hardware">Hardware</a>
           <a href="#intelligence">AI</a>
           <a href="#contact">Contact</a>
-          <motion.button className="nav-cta" whileTap={{ scale: 0.95 }}>
-            Request Access
-          </motion.button>
+          <button className="nav-cta">Request Access</button>
         </div>
-      </motion.nav>
+      </nav>
 
-      {/* ─────────────────────────── HERO ────────────────────────────────── */}
+      {/* HERO */}
       <section className="hero">
         <div className="hero-bg">
-          <img
-            src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1920&q=80&auto=format&fit=crop"
-            alt="Luxury residence"
-          />
+          <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1920&q=80&auto=format&fit=crop" alt="Luxury residence" />
           <div className="hero-overlay" />
         </div>
         <div className="hero-content">
-          <motion.p
-            className="hero-tag"
-            initial={{ opacity: 0, y: 18 }}
-            animate={gateDone ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.60, ease: LUX, delay: 0.08 }}
-          >
-            Complete home intelligence system
-          </motion.p>
-          <motion.h1
-            className="hero-h1"
-            initial={{ opacity: 0, y: 34 }}
-            animate={gateDone ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.80, ease: LUX, delay: 0.22 }}
-          >
-            Your entire home.<br />One touch.
-          </motion.h1>
-          <motion.p
-            className="hero-p"
-            initial={{ opacity: 0, y: 20 }}
-            animate={gateDone ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.65, ease: LUX, delay: 0.38 }}
-          >
-            Custom hardware. Anticipatory AI. Professional installation. Rta replaces
-            every smart home app with a single brass panel on your wall.
-          </motion.p>
-          <motion.div
-            className="hero-btns"
-            initial={{ opacity: 0, y: 16 }}
-            animate={gateDone ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.60, ease: LUX, delay: 0.52 }}
-          >
-            <motion.button className="btn-p" whileTap={{ scale: 0.96 }}>
-              Request Installation
-            </motion.button>
-            <motion.button className="btn-s" whileTap={{ scale: 0.96 }}>
-              Watch the Film
-            </motion.button>
-          </motion.div>
+          <p className="hero-tag rv vis">Complete home intelligence system</p>
+          <h1 className="hero-h1 rv vis">Your entire home.<br />One touch.</h1>
+          <p className="hero-p rv vis">Custom hardware. Anticipatory AI. Professional installation. Rta replaces every smart home app with a single brass panel on your wall.</p>
+          <div className="hero-btns rv vis">
+            <button className="btn-p">Request Installation</button>
+            <button className="btn-s">Watch the Film</button>
+          </div>
         </div>
-        <motion.div
-          className="scroll-hint"
-          initial={{ opacity: 0 }}
-          animate={gateDone ? { opacity: 1 } : {}}
-          transition={{ duration: 1, delay: 0.9, ease: LUX }}
-        >
+        <div className="scroll-hint">
           <span className="scroll-txt">Scroll</span>
           <div className="scroll-line" />
-        </motion.div>
-      </section>
-
-      {/* ─────────────────────────── PROBLEM ─────────────────────────────── */}
-      <section className="sec sec-pe">
-        <div className="mw">
-          <motion.h2
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-60px 0px" }}
-            variants={fadeUp}
-            custom={0}
-            style={{ fontFamily: "var(--fd)", fontSize: "clamp(2rem,5vw,3.8rem)", fontWeight: 400, lineHeight: 1.1, maxWidth: 900 }}
-          >
-            12 apps. 6 remotes. 4 voice assistants that don&apos;t talk to each other.{" "}
-            <em style={{ color: "var(--brass)", fontStyle: "italic" }}>
-              That&apos;s not a smart home. That&apos;s a complicated one.
-            </em>
-          </motion.h2>
         </div>
       </section>
 
-      {/* ─────────────────────────── SIX DOMAINS ─────────────────────────── */}
+      {/* PROBLEM */}
+      <section className="sec sec-pe">
+        <div className="mw">
+          <h2 ref={addReveal} data-d="0" className="rv" style={{ fontFamily: "var(--fd)", fontSize: "clamp(2rem,5vw,3.8rem)", fontWeight: 400, lineHeight: 1.1, maxWidth: 900 }}>
+            12 apps. 6 remotes. 4 voice assistants that don&apos;t talk to each other. <em style={{ color: "var(--brass)", fontStyle: "italic" }}>That&apos;s not a smart home. That&apos;s a complicated one.</em>
+          </h2>
+        </div>
+      </section>
+
+      {/* SIX DOMAINS */}
       <section className="sec sec-dk" id="system">
         <div className="mw">
-          <motion.p initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0} className="tag">The system</motion.p>
-          <motion.h2 initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1} className="h2" style={{ color: "var(--cream)" }}>Six domains. One brain.</motion.h2>
-          <motion.p initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={2} className="body" style={{ color: "rgba(250,248,245,0.45)", maxWidth: 550 }}>
-            Every system in your home &#8212; from the lights to the locks &#8212; unified under a single intelligence.
-          </motion.p>
-          <motion.div
-            className="domain-grid"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-40px" }}
-            variants={staggerWrap}
-          >
+          <p ref={addReveal} data-d="0" className="tag rv">The system</p>
+          <h2 ref={addReveal} data-d="1" className="h2 rv" style={{ color: "var(--cream)" }}>Six domains. One brain.</h2>
+          <p ref={addReveal} data-d="2" className="body rv" style={{ color: "rgba(250,248,245,0.45)", maxWidth: 550 }}>Every system in your home &#8212; from the lights to the locks &#8212; unified under a single intelligence.</p>
+          <div className="domain-grid">
             {[
-              { name: "Lighting",      desc: "Scenes, schedules, circadian rhythm. Your home matches the time of day." },
-              { name: "Climate",       desc: "Heating, cooling, ventilation. Every room at the perfect temperature." },
-              { name: "Security",      desc: "Cameras, locks, alarms. Your car arrives \u2014 the gate opens, the door unlocks." },
-              { name: "Blinds",        desc: "Motorized control. Dawn breaks, blinds rise. Movie starts, blackout descends." },
+              { name: "Lighting", desc: "Scenes, schedules, circadian rhythm. Your home matches the time of day." },
+              { name: "Climate", desc: "Heating, cooling, ventilation. Every room at the perfect temperature." },
+              { name: "Security", desc: "Cameras, locks, alarms. Your car arrives \u2014 the gate opens, the door unlocks." },
+              { name: "Blinds", desc: "Motorized control. Dawn breaks, blinds rise. Movie starts, blackout descends." },
               { name: "Entertainment", desc: "Multi-room audio, TV. One button: projector drops, lights dim to cinema." },
-              { name: "Appliances",    desc: "Coffee, oven, washer. Your alarm goes off \u2014 coffee brews before you stand." },
-            ].map((d) => (
-              <motion.div
-                key={d.name}
-                variants={gridItem}
-                className="domain-card"
-                whileHover={{
-                  backgroundColor: "rgba(250,248,245,0.07)",
-                  borderColor: "rgba(139,111,71,0.35)",
-                  y: -4,
-                  transition: { type: "spring", stiffness: 320, damping: 22 },
-                }}
-              >
+              { name: "Appliances", desc: "Coffee, oven, washer. Your alarm goes off \u2014 coffee brews before you stand." },
+            ].map((d, i) => (
+              <div key={d.name} ref={addReveal} data-d={i} className="domain-card rv">
                 <div className="domain-dot" />
                 <div className="domain-name">{d.name}</div>
                 <div className="domain-desc">{d.desc}</div>
-              </motion.div>
+              </div>
             ))}
-          </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* ─────────────────────────── BRASS PANEL ─────────────────────────── */}
+      {/* BRASS PANEL */}
       <section className="sec" id="hardware">
         <div className="mw">
           <div className="brass-showcase">
-            <motion.div
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              variants={fadeUp}
-              custom={0}
-              className="brass-visual"
-            >
-              <motion.div
-                className="brass-panel"
-                animate={{ y: [0, -9, 0] }}
-                transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut" }}
-              >
+            <div ref={addReveal} data-d="0" className="brass-visual rv">
+              <div className="brass-panel">
                 <div className="brass-logo">Rta</div>
                 <div className="brass-row"><div className="brass-btn" /><div className="brass-btn" /></div>
                 <div className="brass-sep" />
                 <div className="brass-row"><div className="brass-btn" /><div className="brass-btn" /></div>
                 <div className="brass-sep" />
                 <div className="brass-row"><div className="brass-btn" /><div className="brass-btn" /></div>
-              </motion.div>
+              </div>
               <div className="brass-size">86 &#215; 146 mm</div>
-            </motion.div>
+            </div>
             <div className="brass-info">
-              <motion.p initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0} className="tag-sm">Flagship</motion.p>
-              <motion.h2 initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1} className="brass-title">Rta Brass Panel</motion.h2>
-              <motion.p initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={2} className="brass-desc">
-                Machined from solid brass, aged to a warm patina. No screen. No LEDs. Six haptic buttons you can find in the dark. Each press sends a subtle vibration confirming the action.
-              </motion.p>
-              <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={3} className="chips">
+              <p ref={addReveal} data-d="0" className="tag-sm rv">Flagship</p>
+              <h2 ref={addReveal} data-d="1" className="brass-title rv">Rta Brass Panel</h2>
+              <p ref={addReveal} data-d="2" className="brass-desc rv">Machined from solid brass, aged to a warm patina. No screen. No LEDs. Six haptic buttons you can find in the dark. Each press sends a subtle vibration confirming the action.</p>
+              <div ref={addReveal} data-d="3" className="chips rv">
                 {["Solid brass", "Haptic feedback", "Thread / Zigbee", "5-year battery", "IP44 rated", "OTA updates"].map((c) => (
                   <span key={c} className="chip">{c}</span>
                 ))}
-              </motion.div>
+              </div>
             </div>
           </div>
 
-          <motion.div
-            className="hw-grid"
-            style={{ marginTop: "4rem" }}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-40px" }}
-            variants={staggerWrap}
-          >
+          <div className="hw-grid" style={{ marginTop: "4rem" }}>
             {[
-              { name: "Sensors",     desc: "Temperature, motion, air quality. Hidden behind walls." },
+              { name: "Sensors", desc: "Temperature, motion, air quality. Hidden behind walls." },
               { name: "Controllers", desc: "Relays, dimmers, IR blasters. Inside your electrical panel." },
-              { name: "Actuators",   desc: "Blind motors, smart locks, valve controllers." },
-              { name: "Rta Hub",     desc: "On-premise brain. Works without internet." },
-            ].map((h) => (
-              <motion.div
-                key={h.name}
-                variants={gridItem}
-                className="hw-card"
-                whileHover={{
-                  borderColor: "var(--brass-pale)",
-                  y: -5,
-                  transition: { type: "spring", stiffness: 320, damping: 22 },
-                }}
-              >
+              { name: "Actuators", desc: "Blind motors, smart locks, valve controllers." },
+              { name: "Rta Hub", desc: "On-premise brain. Works without internet." },
+            ].map((h, i) => (
+              <div key={h.name} ref={addReveal} data-d={i} className="hw-card rv">
                 <div className="hw-icon"><div className="hw-icon-dot" /></div>
                 <div className="hw-name">{h.name}</div>
                 <div className="hw-desc">{h.desc}</div>
-              </motion.div>
+              </div>
             ))}
-          </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* ─────────────────────────── INTERLUDE (parallax) ────────────────── */}
-      <InterludeSection />
+      {/* INTERLUDE */}
+      <section className="interlude">
+        <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1920&q=80&auto=format&fit=crop" alt="Residence at dusk" />
+        <div className="interlude-overlay" />
+        <p className="interlude-text">The spine keeps your home alive.<br />The mind makes it <em>intelligent.</em></p>
+      </section>
 
-      {/* ─────────────────────────── AI INTELLIGENCE ─────────────────────── */}
+      {/* AI INTELLIGENCE */}
       <section className="sec" id="intelligence">
         <div className="mw">
           <div className="ai-grid">
             <div className="ai-sticky">
-              <motion.p initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0} className="tag">The intelligence</motion.p>
-              <motion.h2 initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1} className="h2">It learns. Then it asks. Then it disappears.</motion.h2>
-              <motion.p initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={2} className="body">
-                Rta never surprises you. It observes your patterns, detects routines, then asks permission before automating anything new.
-              </motion.p>
+              <p ref={addReveal} data-d="0" className="tag rv">The intelligence</p>
+              <h2 ref={addReveal} data-d="1" className="h2 rv">It learns. Then it asks. Then it disappears.</h2>
+              <p ref={addReveal} data-d="2" className="body rv">Rta never surprises you. It observes your patterns, detects routines, then asks permission before automating anything new.</p>
             </div>
-            <motion.div
-              className="ai-steps"
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: "-40px" }}
-              variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.15, delayChildren: 0.1 } } }}
-            >
-              <motion.div variants={gridItem} className="ai-step">
+            <div className="ai-steps">
+              <div ref={addReveal} data-d="0" className="ai-step rv">
                 <div className="ai-step-head">
                   <div className="ai-step-num ai-step-num-lt">1</div>
                   <span className="ai-step-tag">Observe &#183; Week 1</span>
                 </div>
                 <p className="ai-step-body">Rta watches: you dim the living room to 40% at 9:15 PM every evening. It says nothing.</p>
-              </motion.div>
-              <motion.div variants={gridItem} className="ai-step">
+              </div>
+              <div ref={addReveal} data-d="1" className="ai-step rv">
                 <div className="ai-step-head">
                   <div className="ai-step-num ai-step-num-lt">2</div>
                   <span className="ai-step-tag">Detect &#183; Day 6</span>
                 </div>
                 <p className="ai-step-body">Pattern confirmed: &ldquo;Dim living room to 40% at ~9:15 PM&rdquo; &#8212; 5 out of 5 evenings.</p>
-              </motion.div>
-              <motion.div variants={gridItem} className="ai-step ai-step-dk">
+              </div>
+              <div ref={addReveal} data-d="2" className="ai-step ai-step-dk rv">
                 <div className="ai-step-head">
                   <div className="ai-step-num ai-step-num-dk">3</div>
                   <span className="ai-step-tag ai-step-tag-br">Ask permission &#183; Day 7</span>
@@ -705,135 +424,95 @@ export default function Home() {
                     <span className="ai-notif-no">Not yet</span>
                   </div>
                 </div>
-              </motion.div>
-              <motion.div variants={gridItem} className="ai-step">
+              </div>
+              <div ref={addReveal} data-d="3" className="ai-step rv">
                 <div className="ai-step-head">
                   <div className="ai-step-num ai-step-num-br">&#10003;</div>
                   <span className="ai-step-tag ai-step-tag-go">Automated &#183; Day 8+</span>
                 </div>
                 <p className="ai-step-body">Approved. Runs every night on the local hub. Works even if the internet goes down.</p>
-              </motion.div>
-            </motion.div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ─────────────────────────── ARCHITECTURE ────────────────────────── */}
+      {/* SPINE + MIND */}
       <section className="sec sec-dk">
         <div className="mw" style={{ textAlign: "center" }}>
-          <motion.p initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0} className="tag" style={{ color: "var(--brass-pale)" }}>The architecture</motion.p>
-          <motion.h2 initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1} className="h2" style={{ color: "var(--cream)" }}>Two layers. Unbreakable.</motion.h2>
-          <motion.div
-            className="arch-grid"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-40px" }}
-            variants={staggerWrap}
-          >
-            <motion.div
-              variants={gridItem} className="arch-card"
-              whileHover={{ borderColor: "rgba(139,111,71,0.25)", y: -4, transition: { type: "spring", stiffness: 300, damping: 22 } }}
-            >
+          <p ref={addReveal} data-d="0" className="tag rv" style={{ color: "var(--brass-pale)" }}>The architecture</p>
+          <h2 ref={addReveal} data-d="1" className="h2 rv" style={{ color: "var(--cream)" }}>Two layers. Unbreakable.</h2>
+          <div className="arch-grid">
+            <div ref={addReveal} data-d="0" className="arch-card rv">
               <div className="arch-label">The spine</div>
               <div className="arch-name">Rta Hub (on-premise)</div>
               <div className="arch-desc">Lives in your home. Real-time device control, offline routines, local security fallback. Internet dies? Your home keeps running.</div>
               <div className="arch-feat"><div className="arch-dot" /><span className="arch-feat-text">Sub-50ms response</span></div>
               <div className="arch-feat"><div className="arch-dot" /><span className="arch-feat-text">Full offline operation</span></div>
               <div className="arch-feat"><div className="arch-dot" /><span className="arch-feat-text">Encrypted local mesh</span></div>
-            </motion.div>
-            <motion.div
-              variants={gridItem} className="arch-card"
-              whileHover={{ borderColor: "rgba(139,111,71,0.25)", y: -4, transition: { type: "spring", stiffness: 300, damping: 22 } }}
-            >
+            </div>
+            <div ref={addReveal} data-d="1" className="arch-card rv">
               <div className="arch-label">The mind</div>
               <div className="arch-name">Rta Cloud Brain</div>
               <div className="arch-desc">Lives in the cloud. Pattern learning, anomaly detection, new routine proposals, remote access worldwide.</div>
               <div className="arch-feat"><div className="arch-dot" /><span className="arch-feat-text">Learns your rhythm in days</span></div>
               <div className="arch-feat"><div className="arch-dot" /><span className="arch-feat-text">Asks before automating</span></div>
               <div className="arch-feat"><div className="arch-dot" /><span className="arch-feat-text">Access from anywhere</span></div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* ─────────────────────────── METRICS ─────────────────────────────── */}
+      {/* METRICS */}
       <section className="sec sec-iv">
         <div className="mw">
-          <motion.div
-            className="metrics"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-40px" }}
-            variants={staggerWrap}
-          >
-            <motion.div variants={gridItem}>
-              <div className="m-val">&lt;<AnimatedNumber value={50} /><span style={{ fontSize: "0.6em" }}>ms</span></div>
-              <div className="m-label">Response time</div>
-            </motion.div>
-            <motion.div variants={gridItem}>
-              <div className="m-val"><AnimatedNumber value={100} /><span style={{ fontSize: "0.6em" }}>%</span></div>
-              <div className="m-label">Offline capable</div>
-            </motion.div>
-            <motion.div variants={gridItem}>
-              <div className="m-val"><AnimatedNumber value={6} /></div>
-              <div className="m-label">Domains controlled</div>
-            </motion.div>
-            <motion.div variants={gridItem}>
-              <div className="m-val"><AnimatedNumber value={1} /></div>
-              <div className="m-label">Touch to control all</div>
-            </motion.div>
-          </motion.div>
+          <div className="metrics">
+            <div ref={addReveal} data-d="0" className="rv"><div className="m-val">&lt;50<span style={{ fontSize: "0.6em" }}>ms</span></div><div className="m-label">Response time</div></div>
+            <div ref={addReveal} data-d="1" className="rv"><div className="m-val">100<span style={{ fontSize: "0.6em" }}>%</span></div><div className="m-label">Offline capable</div></div>
+            <div ref={addReveal} data-d="2" className="rv"><div className="m-val">6</div><div className="m-label">Domains controlled</div></div>
+            <div ref={addReveal} data-d="3" className="rv"><div className="m-val">1</div><div className="m-label">Touch to control all</div></div>
+          </div>
         </div>
       </section>
 
-      {/* ─────────────────────────── TESTIMONIALS ────────────────────────── */}
+      {/* TESTIMONIALS */}
       <section className="sec sec-pe">
         <div className="mw" style={{ textAlign: "center" }}>
-          <motion.p initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0} className="tag">Resident voices</motion.p>
-          <TestimonialCarousel />
+          <p ref={addReveal} data-d="0" className="tag rv">Resident voices</p>
+          <TestimonialCarousel addReveal={addReveal} />
         </div>
       </section>
 
-      {/* ─────────────────────────── INSTALLATION ────────────────────────── */}
+      {/* INSTALLATION */}
       <section className="sec sec-iv">
         <div className="mw" style={{ textAlign: "center" }}>
-          <motion.p initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0} className="tag">The process</motion.p>
-          <motion.h2 initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1} className="h2">White-glove installation</motion.h2>
-          <motion.div
-            className="install-grid"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-40px" }}
-            variants={staggerWrap}
-          >
+          <p ref={addReveal} data-d="0" className="tag rv">The process</p>
+          <h2 ref={addReveal} data-d="1" className="h2 rv">White-glove installation</h2>
+          <div className="install-grid">
             {[
-              { num: "1", name: "Consultation", desc: "We survey your home and design a system map for every room.",               style: "install-num-dk" },
-              { num: "2", name: "Installation", desc: "Professional technicians install every device. 2\u20133 days.",             style: "install-num-dk" },
-              { num: "3", name: "Calibration",  desc: "Rta observes for 7 days and proposes its first automations.",               style: "install-num-dk" },
-              { num: "✓", name: "Living",       desc: "Your home is alive. It learns more each week. You do less each day.",       style: "install-num-br" },
-            ].map((s) => (
-              <motion.div key={s.name} variants={gridItem}>
+              { num: "1", name: "Consultation", desc: "We survey your home and design a system map for every room.", style: "install-num-dk" },
+              { num: "2", name: "Installation", desc: "Professional technicians install every device. 2\u20133 days.", style: "install-num-dk" },
+              { num: "3", name: "Calibration", desc: "Rta observes for 7 days and proposes its first automations.", style: "install-num-dk" },
+              { num: "\u2713", name: "Living", desc: "Your home is alive. It learns more each week. You do less each day.", style: "install-num-br" },
+            ].map((s, i) => (
+              <div key={s.name} ref={addReveal} data-d={i} className="rv">
                 <div className={`install-num ${s.style}`}>{s.num}</div>
                 <div className="install-name">{s.name}</div>
                 <div className="install-desc">{s.desc}</div>
-              </motion.div>
+              </div>
             ))}
-          </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* ─────────────────────────── FOUNDER ─────────────────────────────── */}
+      {/* FOUNDER */}
       <section className="sec sec-pe">
         <div className="mw">
           <div className="founder">
-            <motion.p initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0} className="tag">The architects</motion.p>
-            <motion.h2 initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1} className="founder-quote">
-              &ldquo;We didn&apos;t build another smart home app. We built the entire system &#8212; from the brass on your wall to the cloud that thinks for you.&rdquo;
-            </motion.h2>
-            <motion.p initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={2} className="founder-bio">
-              Rta Living was born from a refusal to accept the status quo. Smart homes aren&apos;t smart. They&apos;re fragmented. We built hardware, software, and intelligence as one &#8212; because that&apos;s the only way.
-            </motion.p>
-            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={3} className="founder-names">
+            <p ref={addReveal} data-d="0" className="tag rv">The architects</p>
+            <h2 ref={addReveal} data-d="1" className="founder-quote rv">&ldquo;We didn&apos;t build another smart home app. We built the entire system &#8212; from the brass on your wall to the cloud that thinks for you.&rdquo;</h2>
+            <p ref={addReveal} data-d="2" className="founder-bio rv">Rta Living was born from a refusal to accept the status quo. Smart homes aren&apos;t smart. They&apos;re fragmented. We built hardware, software, and intelligence as one &#8212; because that&apos;s the only way.</p>
+            <div ref={addReveal} data-d="3" className="founder-names rv">
               <div className="founder-person">
                 <div className="founder-name">Jawahar Naidu</div>
                 <div className="founder-role">Co-Founder &amp; Chief Architect</div>
@@ -843,34 +522,26 @@ export default function Home() {
                 <div className="founder-name">Renukesh</div>
                 <div className="founder-role">Co-Founder &amp; Head of Engineering</div>
               </div>
-            </motion.div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ─────────────────────────── CTA ─────────────────────────────────── */}
+      {/* CTA */}
       <section className="sec" id="contact">
         <div className="cta-block">
-          <motion.p initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0} className="tag" style={{ color: "var(--brass)" }}>Begin Your Journey</motion.p>
-          <motion.h2 initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1} className="h2" style={{ textAlign: "center" }}>Request Early<br />Access to Rta</motion.h2>
-          <motion.p initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={2} className="body" style={{ textAlign: "center", maxWidth: 400, margin: "0 auto" }}>
-            Join a curated community of residents who believe their home should think, adapt, and serve &#8212; invisibly.
-          </motion.p>
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={3} className="cta-form">
+          <p ref={addReveal} data-d="0" className="tag rv" style={{ color: "var(--brass)" }}>Begin Your Journey</p>
+          <h2 ref={addReveal} data-d="1" className="h2 rv" style={{ textAlign: "center" }}>Request Early<br />Access to Rta</h2>
+          <p ref={addReveal} data-d="2" className="body rv" style={{ textAlign: "center", maxWidth: 400, margin: "0 auto" }}>Join a curated community of residents who believe their home should think, adapt, and serve &#8212; invisibly.</p>
+          <div ref={addReveal} data-d="3" className="cta-form rv">
             <input className="cta-input" type="email" placeholder="Your email address" />
             <button className="cta-submit">Request Access</button>
-          </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* ─────────────────────────── FOOTER ──────────────────────────────── */}
-      <motion.footer
-        className="footer"
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        viewport={{ once: true, margin: "-40px" }}
-        transition={{ duration: 0.9, ease: LUX }}
-      >
+      {/* FOOTER */}
+      <footer className="footer">
         <div className="footer-grid">
           <div>
             <div className="footer-brand">Rta Living</div>
@@ -896,7 +567,33 @@ export default function Home() {
             <a href="#">Privacy</a><a href="#">Terms</a>
           </div>
         </div>
-      </motion.footer>
+      </footer>
     </>
+  );
+}
+
+function TestimonialCarousel({ addReveal }: { addReveal: (el: HTMLElement | null) => void }) {
+  const [active, setActive] = useState(0);
+  const testimonials = [
+    { q: "The brass panel changed everything. My children can control any room with one button. No screens, no apps, no arguments about the remote.", n: "Arjun & Kavya Mehta", l: "The Ritz-Carlton Residences, Mumbai" },
+    { q: "Rta asked me if it should start my coffee when my alarm goes off. I said yes. That was three months ago. I haven\u2019t touched the machine since.", n: "Sophia Rothschild", l: "One Hyde Park, London" },
+    { q: "I travel 280 days a year. Rta runs my homes in Mumbai and London as if I never left.", n: "Priya Desai", l: "Dual Residence, Mumbai & London" },
+  ];
+
+  return (
+    <div ref={addReveal} data-d="1" className="rv" style={{ position: "relative", zIndex: 1 }}>
+      {testimonials.map((t, i) => (
+        <div key={i} className={`voice ${i === active ? "on" : ""}`}>
+          <div className="voice-q">&ldquo;{t.q}&rdquo;</div>
+          <p className="voice-n">{t.n}</p>
+          <p className="voice-l">{t.l}</p>
+        </div>
+      ))}
+      <div className="v-dots">
+        {testimonials.map((_, i) => (
+          <button key={i} className={`v-dot ${i === active ? "on" : ""}`} onClick={() => setActive(i)} />
+        ))}
+      </div>
+    </div>
   );
 }
