@@ -272,7 +272,7 @@ export default function Home() {
 
       {/* NAV */}
       <nav className="nav">
-        <a href="#" className="logo"><span style={{color: "#8B6F47", fontSize: "1.4rem", marginRight: "0.4em", fontFamily: "var(--fd)", fontWeight: "600"}}>ऋत</span>Rta <b>Living</b></a>
+        <a href="#" className="logo">Rta <b>Living</b></a>
         <div className="nav-links">
           <a href="#system">System</a>
           <a href="#hardware">Hardware</a>
