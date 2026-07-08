@@ -17,8 +17,17 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "Rta Living",
-  description: "Order, naturally.",
+  title: "Rta Living — Your Home, Thinking",
+  description:
+    "A living digital twin for every light, lock, breath of air and watt of energy in your residence.",
+  metadataBase: new URL("https://rtaliving.com"),
+  openGraph: {
+    title: "Rta Living — Your Home, Thinking",
+    description: "Private home intelligence, unified in one living digital twin.",
+    url: "https://rtaliving.com",
+    siteName: "Rta Living",
+    type: "website",
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
